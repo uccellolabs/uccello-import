@@ -5,6 +5,7 @@ namespace Uccello\Import\Imports;
 use App\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -23,13 +24,15 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
     use Importable;
     use WithStatsTrait;
 
+    protected $domain;
     protected $module;
     protected $fields;
     protected $defaultValues;
 
-    public function __construct($module, $fields, $defaultValues)
+    public function __construct($domain, $module, $fields, $defaultValues)
     {
         $this->importedBy = auth()->user();
+        $this->domain = $domain;
         $this->module = $module;
         $this->fields = $fields;
         $this->defaultValues = $defaultValues;
@@ -109,9 +112,73 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
         $record = new $modelClass;
 
         foreach ($row as $i => $column) {
-            $record->{$this->fields[$i]} = $row[$i] ?? $this->defaultValues[$i];
+            $fieldName = $this->fields[$i];
+            $field = $this->module->fields()->where('name', $fieldName)->first();
+
+            $value = $row[$i] ?? $this->defaultValues[$i];
+            $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSave(request(), $field, $value, $record, $this->domain, $this->module);
         }
 
+        // Add domain_id if necessary
+        if (Schema::hasColumn($record->getTable(), 'domain_id')) {
+            $record->domain_id = $this->domain->getKey();
+        }
+
+        // $record->getKey()
+        //     ? $this->notificationData['updated']++
+        //     : $this->notificationData['created']++;
+
+        $this->notificationData['created']++;
+        $this->notificationData['lines']++;
+
         return $record;
+    }
+
+    protected function getAccountTypes($row)
+    {
+        $types = [];
+
+        // Customer
+        if ($row[0] === 'Yes') {
+            $types[] = 'type.customer';
+        }
+
+        // Vendor
+        if ($row[3] === 'Yes') {
+            $types[] = 'type.vendor';
+        }
+
+        // Lead
+        if ($row[12] === 'Yes') {
+            $types[] = 'type.lead';
+        }
+
+        return count($types) > 0 ? json_encode($types) : null;
+    }
+
+    protected function getAssignedUserUuid($name)
+    {
+        $user = User::firstOrNew([
+            'name' => $name
+        ]);
+
+        if (!$user->getKey()) {
+            $user->username = Str::slug($name, '.');
+            $user->email = $user->username . '@capbarthodia.com';
+            $user->password = Hash::make(env('DEFAULT_USER_PASSWORD', '123456!'));
+            $user->domain_id = Domain::first()->getKey();
+            $user->save();
+        }
+
+        return $user->uuid;
+    }
+
+    protected function getClientPriceId($label)
+    {
+        $clientPrice = ClientPrice::where('label', trim($label))
+            ->orderBy('date_start', 'desc')
+            ->first();
+
+        return $clientPrice ? $clientPrice->getKey() : null;
     }
 }

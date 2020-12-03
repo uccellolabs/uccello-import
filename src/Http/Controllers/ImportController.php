@@ -10,6 +10,7 @@ use Uccello\Core\Models\Domain;
 use Uccello\Core\Models\Module;
 use Uccello\Import\Imports\GenericImport;
 use Uccello\Import\Jobs\NotifyUserOfCompletedImport;
+use Uccello\Import\Models\ImportMapping;
 
 class ImportController extends Controller
 {
@@ -60,9 +61,16 @@ class ImportController extends Controller
             if (!empty($firstRow[0][0])) {
                 $firstRow = $firstRow[0][0];
             }
+
+            // Get all mapping for this module
+            $importMappings = ImportMapping::where('module_id', $this->module->id)
+                ->whereNull('user_id')
+                ->orWhere('user_id', auth()->id())
+                ->orderBy('name')
+                ->get();
         }
 
-        return view('import::modules.import.main', compact('headings', 'firstRow', 'filePath'));
+        return view('import::modules.import.main', compact('headings', 'firstRow', 'filePath', 'importMappings'));
     }
 
     /**
@@ -75,17 +83,54 @@ class ImportController extends Controller
      */
     public function process(?Domain $domain, Module $module, Request $request)
     {
-        (new GenericImport($module, $request->fields, $request->defaults))->queue($request->filepath)->chain([
-            new NotifyUserOfCompletedImport(auth()->user(), uctrans($module->name, $module)),
-        ]);
-
         // Pre-process
         $this->preProcess($domain, $module, $request);
 
         $domain = $this->domain;
 
+        // Save mapping
+        $this->__saveMapping($request);
+
+        (new GenericImport($domain, $module, $request->fields, $request->defaults))->queue($request->filepath)->chain([
+            new NotifyUserOfCompletedImport(auth()->user(), uctrans($module->name, $module)),
+        ]);
+
         // TODO: Add flash info (Import launched).
 
         return redirect(ucroute('uccello.list', $domain, $module));
+    }
+
+    /**
+     * Create or update a mapping
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return void
+     */
+    protected function __saveMapping(Request $request)
+    {
+        // Save only if a name is defined
+        if (!$request->mapping_name) {
+            return;
+        }
+
+        // Generate mapping config
+        $config = [];
+        foreach ($request->fields as $i => $field) {
+            $config[] = [
+                'field' => $field,
+                'default' => !empty($request->defaults[$i]) ? $request->defaults[$i] : null
+            ];
+        }
+
+        // Create or update mapping
+        $importMapping = ImportMapping::firstOrNew([
+            'module_id' => $this->module->id,
+            'user_id' => auth()->id(),
+            'name' => $request->mapping_name
+        ]);
+
+        $importMapping->config = $config;
+        $importMapping->save();
     }
 }

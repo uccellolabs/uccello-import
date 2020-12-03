@@ -12,6 +12,7 @@ return [
     'label' => [
         'import' => 'Importer',
         'file' => 'Fichier CSV ou XLSX',
+        'load_mapping' => '- Charger un mapping -',
     ],
     'field' => [
         'header' => 'Entête',
