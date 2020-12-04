@@ -14,4 +14,5 @@ Route::middleware('web', 'auth')
 
     Route::post($domainAndModuleParams.'/import/prepare', 'ImportController@prepare')->name('prepare');
     Route::post($domainAndModuleParams.'/import/process', 'ImportController@process')->name('process');
+    Route::get($domainAndModuleParams.'/import/field/config', 'ImportController@fieldConfig')->name('field.config');
 });

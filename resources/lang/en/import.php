@@ -18,6 +18,7 @@ return [
         'header' => 'Header',
         'first_row' => 'Row 1',
         'module_fields' => 'Module fields',
+        'field_config' => 'Field config',
         'default_value' => 'Default value',
     ],
 ];
