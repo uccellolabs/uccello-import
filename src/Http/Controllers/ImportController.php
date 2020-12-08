@@ -91,7 +91,7 @@ class ImportController extends Controller
         // Save mapping
         $this->__saveMapping($request);
 
-        (new GenericImport($domain, $module, $request->fields, $request->defaults))->queue($request->filepath)->chain([
+        (new GenericImport($domain, $module, $request->fields, $request->config, $request->defaults))->queue($request->filepath)->chain([
             new NotifyUserOfCompletedImport(auth()->user(), uctrans($module->name, $module)),
         ]);
 

@@ -27,14 +27,16 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
     protected $domain;
     protected $module;
     protected $fields;
+    protected $configs;
     protected $defaultValues;
 
-    public function __construct($domain, $module, $fields, $defaultValues)
+    public function __construct($domain, $module, $fields, $configs, $defaultValues)
     {
         $this->importedBy = auth()->user();
         $this->domain = $domain;
         $this->module = $module;
         $this->fields = $fields;
+        $this->configs = $configs;
         $this->defaultValues = $defaultValues;
 
         // Pour la console on récupère l'utilisateur par défaut
@@ -113,10 +115,11 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
 
         foreach ($row as $i => $column) {
             $fieldName = $this->fields[$i];
+            $config = json_decode($this->configs[$i]);
             $field = $this->module->fields()->where('name', $fieldName)->first();
 
             $value = $row[$i] ?? $this->defaultValues[$i];
-            $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSave(request(), $field, $value, $record, $this->domain, $this->module);
+            $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSaveWithConfig(request(), $field, $value, $config, $record, $this->domain, $this->module);
         }
 
         // Add domain_id if necessary
@@ -128,57 +131,9 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
         //     ? $this->notificationData['updated']++
         //     : $this->notificationData['created']++;
 
-        $this->notificationData['created']++;
-        $this->notificationData['lines']++;
+        // $this->notificationData['created']++;
+        // $this->notificationData['lines']++;
 
         return $record;
-    }
-
-    protected function getAccountTypes($row)
-    {
-        $types = [];
-
-        // Customer
-        if ($row[0] === 'Yes') {
-            $types[] = 'type.customer';
-        }
-
-        // Vendor
-        if ($row[3] === 'Yes') {
-            $types[] = 'type.vendor';
-        }
-
-        // Lead
-        if ($row[12] === 'Yes') {
-            $types[] = 'type.lead';
-        }
-
-        return count($types) > 0 ? json_encode($types) : null;
-    }
-
-    protected function getAssignedUserUuid($name)
-    {
-        $user = User::firstOrNew([
-            'name' => $name
-        ]);
-
-        if (!$user->getKey()) {
-            $user->username = Str::slug($name, '.');
-            $user->email = $user->username . '@capbarthodia.com';
-            $user->password = Hash::make(env('DEFAULT_USER_PASSWORD', '123456!'));
-            $user->domain_id = Domain::first()->getKey();
-            $user->save();
-        }
-
-        return $user->uuid;
-    }
-
-    protected function getClientPriceId($label)
-    {
-        $clientPrice = ClientPrice::where('label', trim($label))
-            ->orderBy('date_start', 'desc')
-            ->first();
-
-        return $clientPrice ? $clientPrice->getKey() : null;
     }
 }
