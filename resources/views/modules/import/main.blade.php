@@ -1,5 +1,9 @@
 @extends('uccello::modules.default.index.main')
 
+@section('extra-meta')
+<meta name="field-config-url" content="{{ ucroute('uccello.import.field.config', $domain, $module, ['field' => 'FIELD']) }}">
+@append
+
 @section('navbar-top')
 <header class="navbar-fixed navbar-top">
     <nav class="transparent z-depth-0">
@@ -39,6 +43,7 @@
                             <th>{{ trans('import::import.field.header') }}</th>
                             <th>{{ trans('import::import.field.first_row') }}</th>
                             <th>{{ trans('import::import.field.module_fields') }}</th>
+                            <th class="config" style="display: none">{{ trans('import::import.field.field_config') }}</th>
                             <th>{{ trans('import::import.field.default_value') }}</th>
                         </tr>
                         @foreach ($headings as $i => $heading)
@@ -57,9 +62,16 @@
                                             </optgroup>
                                         @endforeach
                                     </select>
+
+                                    <div class="progress green lighten-5" style="display: none;">
+                                        <div class="indeterminate green"></div>
+                                    </div>
                                 </td>
-                                <td>
-                                    <input type="text" name="defaults[]">
+                                <td class="config" style="display: none">
+                                    <input type="hidden" name="config[]">
+                                </td>
+                                <td class="default">
+                                    <input type="hidden" name="defaults[]">
                                 </td>
                             </tr>
                         @endforeach

@@ -18,6 +18,7 @@ return [
         'header' => 'Entête',
         'first_row' => 'Ligne 1',
         'module_fields' => 'Champs du module',
+        'field_config' => 'Configuration du champ',
         'default_value' => 'Valeur par défaut',
     ],
 ];

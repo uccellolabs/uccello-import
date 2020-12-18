@@ -91,13 +91,36 @@ class ImportController extends Controller
         // Save mapping
         $this->__saveMapping($request);
 
-        (new GenericImport($domain, $module, $request->fields, $request->defaults))->queue($request->filepath)->chain([
+        (new GenericImport($domain, $module, $request->fields, $request->config, $request->defaults))->queue($request->filepath)->chain([
             new NotifyUserOfCompletedImport(auth()->user(), uctrans($module->name, $module)),
         ]);
 
         // TODO: Add flash info (Import launched).
 
         return redirect(ucroute('uccello.list', $domain, $module));
+    }
+
+    public function fieldConfig(?Domain $domain, Module $module, Request $request)
+    {
+        // Pre-process
+        $this->preProcess($domain, $module, $request);
+
+        $fieldName = $request->field;
+
+        $field = $module->fields->where('name', $fieldName)->first();
+
+        // If a special template exists, use it. Else use the generic template
+        $uitype = uitype($field->uitype_id);
+        $uitypeViewName = sprintf('uitypes.import.%s', $uitype->name);
+        $uitypeFallbackView = 'import::modules.default.uitypes.import.'.$uitype->name;
+        $uitypeViewToInclude = uccello()->view($module->package, $module, $uitypeViewName, $uitypeFallbackView);
+
+        // If view does not exist, use the text uitype view
+        if (!view()->exists($uitypeViewToInclude)) {
+            $uitypeViewToInclude = 'import::modules.default.uitypes.import.text';
+        }
+
+        return view()->make($uitypeViewToInclude, compact('domain', 'module', 'field'))->render();
     }
 
     /**
