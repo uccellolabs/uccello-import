@@ -69,11 +69,19 @@ class Import {
 
     reloadJsLibrairies() {
         // Reload materialize
-        let event = new CustomEvent('js.init.materialize');
+        let event = new CustomEvent('js.init.materialize', {
+            detail: {
+                element: this.form
+            }
+        });
         dispatchEvent(event);
 
         // Reload librairies used for fields
-        event = new CustomEvent('js.init.field.libraries');
+        event = new CustomEvent('js.init.field.libraries', {
+            detail: {
+                element: this.form
+            }
+        });
         dispatchEvent(event);
     }
 

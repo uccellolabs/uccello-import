@@ -23,7 +23,7 @@
     <div class="default">
         <div class="form-group">
             <div class="form-line">
-                <input name="defaults[]" type="text" class="monthpicker" autocomplete="off">
+                <input name="defaults[]" type="text" autocomplete="off">
             </div>
         </div>
     </div>
