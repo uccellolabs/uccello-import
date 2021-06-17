@@ -93,5 +93,5 @@
 @endsection
 
 @section('extra-script')
-<script src="{{ mix('js/script.js', 'vendor/uccello/import') }}"></script>
+<script src="{{ asset('js/script.js', 'vendor/uccello/import') }}"></script>
 @append

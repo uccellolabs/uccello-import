@@ -10,7 +10,8 @@
         }
     ],
     "require": {
-        "uccello/uccello": "1.*"
+        "uccello/uccello": "^1.0|^2.0",
+        "livewire/livewire": "^2.3"
     },
     "autoload": {
         "psr-4": {

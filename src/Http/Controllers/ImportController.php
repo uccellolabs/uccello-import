@@ -22,6 +22,14 @@ class ImportController extends Controller
         $this->middleware('uccello.permissions:create');
     }
 
+    public function index(?Domain $domain, Module $module, Request $request)
+    {
+        // Pre-process
+        $this->preProcess($domain, $module, $request);
+
+        return view('import::modules.import.form');
+    }
+
     /**
      * Process and display asked page
      * @param Domain|null $domain

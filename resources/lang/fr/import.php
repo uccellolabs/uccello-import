@@ -2,23 +2,11 @@
 
 return [
     'button' => [
+        'continue' => 'Continuer',
         'import' => 'Importer',
-    ],
-    'modal' => [
-        'import' => [
-            'title' => 'Importer un fichier',
-        ]
     ],
     'label' => [
-        'import' => 'Importer',
-        'file' => 'Fichier CSV ou XLSX',
-        'load_mapping' => '- Charger un mapping -',
-    ],
-    'field' => [
-        'header' => 'Entête',
-        'first_row' => 'Ligne 1',
-        'module_fields' => 'Champs du module',
-        'field_config' => 'Configuration du champ',
-        'default_value' => 'Valeur par défaut',
+        'upload_file' => 'Transférez un fichier à importer',
+        'config_mapping' => 'Liez les colonnes',
     ],
 ];

@@ -2,7 +2,7 @@
 
 namespace Uccello\Import\Imports;
 
-use App\User;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -114,12 +114,15 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
         $record = new $modelClass;
 
         foreach ($row as $i => $column) {
-            $fieldName = $this->fields[$i];
-            $config = json_decode($this->configs[$i]);
-            $field = $this->module->fields()->where('name', $fieldName)->first();
+            $fieldName = !empty($this->fields[$i]) ? $this->fields[$i]['field'] : null;
+            $config = null; //json_decode($this->configs[$i]);
 
-            $value = $row[$i] ?? $this->defaultValues[$i];
-            $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSaveWithConfig(request(), $field, $value, $config, $record, $this->domain, $this->module);
+            if ($fieldName) {
+                $field = $this->module->fields()->where('name', $fieldName)->first();
+
+                $value = $row[$i] ?? ''; //$this->defaultValues[$i];
+                $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSaveWithConfig(request(), $field, $value, $config, $record, $this->domain, $this->module);
+            }
         }
 
         // Add domain_id if necessary
