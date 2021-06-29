@@ -12,6 +12,10 @@ class UploadFile extends Component
 
     public $module;
     public $file;
+    public $config = [
+        'firstRow' => 2,
+        'withHeader' => true
+    ];
 
     protected $listeners = [
         'stepChanged' => 'onStepChanged',
@@ -25,6 +29,7 @@ class UploadFile extends Component
     public function uploadFile()
     {
         $this->validate([
+            'config.firstRow' => 'integer|required',
             'file' => 'file|max:'.$this->getMaximumFileUploadSize()
         ]);
 
@@ -35,6 +40,25 @@ class UploadFile extends Component
 
         $this->incrementStep();
     }
+
+    public function toggleWithHeader()
+    {
+        $this->config['withHeader'] = !$this->config['withHeader'];
+
+        if (!$this->config['withHeader']) {
+            $this->config['firstRow'] = 1;
+        } else {
+            $this->config['firstRow'] = 2;
+        }
+    }
+
+    public function incrementStep()
+    {
+        $this->changeStep($this->step + 1);
+
+        $this->emit('configChanged', $this->config);
+    }
+
     /**
     * This function returns the maximum files size that can be uploaded
     * in PHP

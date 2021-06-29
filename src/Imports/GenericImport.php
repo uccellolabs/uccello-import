@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Events\AfterImport;
 use Maatwebsite\Excel\Events\ImportFailed;
 use Uccello\Core\Models\Domain;
+use Uccello\Import\Models\Import;
 use Uccello\Import\Notifications\ImportHasFailedNotification;
 use Uccello\Import\Notifications\ImportIsReadyNotification;
 use Uccello\Import\Support\WithStatsTrait;
@@ -24,20 +25,12 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
     use Importable;
     use WithStatsTrait;
 
-    protected $domain;
-    protected $module;
-    protected $fields;
-    protected $configs;
-    protected $defaultValues;
+    private $import;
 
-    public function __construct($domain, $module, $fields, $configs, $defaultValues)
+    public function __construct($importId)
     {
         $this->importedBy = auth()->user();
-        $this->domain = $domain;
-        $this->module = $module;
-        $this->fields = $fields;
-        $this->configs = $configs;
-        $this->defaultValues = $defaultValues;
+        $this->import = Import::find($importId);
 
         // Pour la console on récupère l'utilisateur par défaut
         if (!$this->importedBy && env('IMPORT_DEFAULT_USER')) {
@@ -73,12 +66,12 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
      */
     public function startRow(): int
     {
-        return 2;
+        return $this->import->config->firstRow ?? 2;
     }
 
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;
     }
 
     /**
@@ -110,24 +103,26 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
     */
     public function model(array $row)
     {
-        $modelClass = $this->module->model_class;
+        $modelClass = $this->import->module->model_class;
         $record = new $modelClass;
 
+        $fields = $this->import->config->fields;
+
         foreach ($row as $i => $column) {
-            $fieldName = !empty($this->fields[$i]) ? $this->fields[$i]['field'] : null;
-            $config = null; //json_decode($this->configs[$i]);
+            $fieldName = !empty($fields[$i]) ? $fields[$i]->field : null;
+            $config = !empty($fields[$i]) ? optional($fields[$i]->options) : null;
 
             if ($fieldName) {
-                $field = $this->module->fields()->where('name', $fieldName)->first();
+                $field = $this->import->module->fields()->where('name', $fieldName)->first();
 
                 $value = $row[$i] ?? ''; //$this->defaultValues[$i];
-                $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSaveWithConfig(request(), $field, $value, $config, $record, $this->domain, $this->module);
+                $record->{$field->column} = uitype($field->uitype_id)->getFormattedValueToSaveWithConfig(request(), $field, $value, $config, $record, $this->import->domain, $this->import->module);
             }
         }
 
         // Add domain_id if necessary
         if (Schema::hasColumn($record->getTable(), 'domain_id')) {
-            $record->domain_id = $this->domain->getKey();
+            $record->domain_id = $this->import->domain->getKey();
         }
 
         // $record->getKey()
@@ -136,6 +131,15 @@ class GenericImport implements ToModel, WithStartRow, WithChunkReading, ShouldQu
 
         // $this->notificationData['created']++;
         // $this->notificationData['lines']++;
+
+        $this->import = Import::find($this->import->getKey());
+
+        $data = $this->import->data;
+        $data->imported = $data->imported + 1;
+        $data->success = $data->success + 1;
+
+        $this->import->data = $data;
+        $this->import->save();
 
         return $record;
     }

@@ -1,11 +1,32 @@
 <div>
     <x-md-vertical-step-card title="{{ trans('import::import.label.upload_file') }}" step="0" closed="{{ $step > 0 }}">
         <div class="p-12 @if($step > 0)hidden @endif">
-            <input type="file"
-                wire:model="file"
-                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+            <div>
+                <input type="file"
+                    wire:model="file"
+                    accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
 
-            @error('file') <span class="text-red-500">{{ $message }}</span> @enderror
+                @error('file') <span class="text-red-500">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="mt-6">
+                Ligne d'entête ?
+                <div class="flex flex-row mb-3 cursor-pointer" wire:click="toggleWithHeader()">
+                    <div class="flex items-center">
+                        <div class="relative flex items-center w-10 h-5 transition duration-200 ease-linear border-2 rounded-full @if($config['withHeader']) border-primary-900 @else border-gray-400 @endif">
+                            <div class="absolute w-3 h-3 transition duration-100 ease-linear transform rounded-full cursor-pointer left-1 @if($config['withHeader']) translate-x-4 bg-primary-900 @else translate-x-0 bg-gray-400 @endif"></div>
+                        </div>
+                    </div>
+                    <div class="ml-2">{{ trans('module-designer::ui.block.config_module.yes') }}</div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                Première ligne à importer
+                <input type="number" wire:model="config.firstRow">
+
+                @error('config.firstRow') <span class="text-red-500">{{ $message }}</span> @enderror
+            </div>
         </div>
 
         {{-- Separator --}}

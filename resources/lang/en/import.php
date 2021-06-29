@@ -8,5 +8,6 @@ return [
     'label' => [
         'upload_file' => 'Upload a file to import',
         'config_mapping' => 'Config mapping',
+        'config_columns' => 'Config columns',
     ],
 ];

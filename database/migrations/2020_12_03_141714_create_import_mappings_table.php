@@ -17,14 +17,7 @@ class CreateImportMappingsTable extends Migration
         Schema::create('import_mappings', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('module_id');
-
-            // Compatibility with Laravel < 5.8
-            if (DB::getSchemaBuilder()->getColumnType('users', 'id') === 'bigint') { // Laravel >= 5.8
-                $table->unsignedBigInteger('user_id')->nullable();
-            } else { // Laravel < 5.8
-                $table->unsignedInteger('user_id')->nullable();
-            }
-
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('name');
             $table->text('config');
             $table->timestamps();

@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Uccello\Import\Http\Livewire\ConfigMapping;
 use Uccello\Import\Http\Livewire\ImportManager;
+use Uccello\Import\Http\Livewire\ImportMonitor;
 use Uccello\Import\Http\Livewire\UploadFile;
 
 /**
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('import-manager', ImportManager::class);
         Livewire::component('import-upload-file', UploadFile::class);
         Livewire::component('import-config-mapping', ConfigMapping::class);
+        Livewire::component('import-monitor', ImportMonitor::class);
     }
 
     public function register()
